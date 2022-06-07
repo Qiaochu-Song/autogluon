@@ -244,7 +244,14 @@ class MultiModalFeaturePreprocessor(TransformerMixin, BaseEstimator):
             if col_type == TEXT or col_type == CATEGORICAL:
                 # TODO: do we need to consider whether categorical values are valid text?
                 col_value = col_value.astype("object")
-                processed_data = col_value.apply(lambda ele: "" if pd.isnull(ele) else str(ele))
+                # If use column name as prompt, split column name by space and underscore
+                if self._config["categorical"]["use_prompt"]:
+                    prompt = col_name.replace("_", " ")
+                    # TODO: allow user to cusomize the concat of column name prompt and content, e.g. ": ", " " or "="
+                    processed_data = col_value.apply(lambda ele: "" if pd.isnull(ele) else prompt + " " + str(ele))
+                    logger.debug(f'Use col name "{col_name}" as prompt')
+                else:
+                    processed_data = col_value.apply(lambda ele: "" if pd.isnull(ele) else str(ele))
             elif col_type == NUMERICAL:
                 processed_data = pd.to_numeric(col_value).apply("{:.3f}".format)
             else:
